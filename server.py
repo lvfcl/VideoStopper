@@ -7,14 +7,14 @@ PORT = 5005
 clients = []
 
 def handle_client(client_socket, addr):
-    print(f"[+] Новое подключение: {addr}")
+    print(f"[+]: {addr}")
     while True:
         try:
             message = client_socket.recv(1024)
             if not message:
                 break
             
-            print(f"Получен сигнал от {addr}. Рассылка...")
+            print(f"Take signal from {addr}. Redirection...")
             
             # Отправляем сигнал всем, кроме отправителя
             for c in clients:
@@ -26,7 +26,7 @@ def handle_client(client_socket, addr):
         except:
             break
     
-    print(f"[-] Отключение: {addr}")
+    print(f"[-]: {addr}")
     clients.remove(client_socket)
     client_socket.close()
 
@@ -34,7 +34,7 @@ def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((HOST, PORT))
     server.listen()
-    print(f"Сервер запущен на {HOST}:{PORT}")
+    print(f"Server start: {HOST}:{PORT}")
 
     while True:
         client_sock, addr = server.accept()
