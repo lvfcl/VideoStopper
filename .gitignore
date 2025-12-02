@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+YOLO
+runs
+
 # C extensions
 *.so
 
@@ -130,6 +133,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+*.jpg
 env/
 venv/
 ENV/
