@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  videostopper-server:
+    build: .
+    container_name: videostopper_server
+    command: python server.py
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+
+  videostopper-worker:
+    build: .
+    container_name: videostopper_client
+    command: python client.py
+    restart: unless-stopped
+    depends_on:
+      - videostopper-server
+    volumes:
+      - .:/app

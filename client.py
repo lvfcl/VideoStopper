@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-SERVER_IP = "192.168.1.101"
+SERVER_IP = "192.168.1.102"
 # SERVER_IP = '192.168.1.100'
 PORT = 5005
 TRIGGER_KEY = 'page up'

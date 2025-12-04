@@ -2,7 +2,7 @@ import socket
 import threading
 
 HOST = '0.0.0.0'
-PORT = 5005
+PORT = 5050
 
 clients = []
 
