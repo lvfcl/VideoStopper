@@ -2,7 +2,7 @@ import socket
 import threading
 
 HOST = '0.0.0.0'
-PORT = 5050
+PORT = 5015
 
 clients = []
 
@@ -16,7 +16,6 @@ def handle_client(client_socket, addr):
             
             print(f"Take signal from {addr}. Redirection...")
             
-            # Отправляем сигнал всем, кроме отправителя
             for c in clients:
                 if c != client_socket:
                     try:

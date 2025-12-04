@@ -1,3 +1,45 @@
+import sys
+import subprocess
+import os
+import time
+
+def install_libs():
+    required = {
+        'keyboard': 'keyboard',
+        'pyautogui': 'pyautogui',
+        'mss': 'mss',
+        'cv2': 'opencv-python',
+        'numpy': 'numpy',
+        'ultralytics': 'ultralytics'
+    }
+    
+    installed = False
+    
+    print(">>> Checking libraries...")
+    for lib_import, lib_install in required.items():
+        try:
+            __import__(lib_import)
+        except ImportError:
+            print(f"!!! Library '{lib_import}' not found. Installing...")
+            try:
+                subprocess.check_call([
+                    sys.executable, "-m", "pip", "install", "--user", lib_install
+                ])
+                installed = True
+            except subprocess.CalledProcessError as e:
+                print(f"ERROR installing {lib_install}. Check internet or proxy.")
+                input("Press Enter to exit...")
+                sys.exit(1)
+
+    if installed:
+        print(">>> All libraries installed. Restarting script...")
+        os.execv(sys.executable, ['python'] + sys.argv)
+    else:
+        print(">>> All libraries present.")
+
+install_libs()
+
+
 import socket
 import threading
 import keyboard
@@ -7,76 +49,33 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-SERVER_IP = "192.168.1.102"
-# SERVER_IP = '192.168.1.100'
-PORT = 5005
+SERVER_IP = "0.tcp.eu.ngrok.io"
+PORT = 13050
 TRIGGER_KEY = 'page up'
 
 try:
     model = YOLO('best.pt') 
 except:
-    print("Внимание: Файл модели 'best.pt' не найден.")
+    print("Warning: Model file 'best.pt' not found.")
     model = None
 
-# def run_ai_logic():
-
-    # """Функция поиска кнопки и клика"""
-    # print(">>> ЗАПУСК НЕЙРОСЕТИ...")
-    
-    # with mss.mss() as sct:
-    #     # Делаем скриншот всего экрана
-    #     monitor = sct.monitors[1]
-    #     screen_img = np.array(sct.grab(monitor))
-        
-    #     # Конвертация цвета для OpenCV/YOLO (из BGRA в BGR)
-    #     frame = cv2.cvtColor(screen_img, cv2.COLOR_BGRA2BGR)
-
-    #     if model:
-    #         # Поиск объектов
-    #         results = model(frame, imgsz=1280, conf=0.01)
-            
-    #         for result in results:
-    #             boxes = result.boxes
-    #             for box in boxes:
-    #                 # Если уверенность > 50%
-    #                 if box.conf[0] > 0.01:
-    #                     print(f"Обнаружен объект с низкой уверенностью: {box.conf[0].item()}")
-    #                     # Получаем координаты (x1, y1, x2, y2)
-    #                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-                        
-    #                     # Вычисляем центр кнопки
-    #                     center_x = int((x1 + x2) / 2)
-    #                     center_y = int((y1 + y2) / 2)
-                        
-    #                     print(f"Кнопка найдена: {center_x}, {center_y}. Кликаю!")
-                        
-    #                     # Двигаем мышь и кликаем
-    #                     pyautogui.moveTo(center_x, center_y, duration=0.5)
-    #                     pyautogui.click()
-    #                     return # Завершаем после первого клика
-    #     else:
-    #         print("Модель не загружена, действие пропущено.")
 
 def run_ai_logic():
-    print(">>> ЗАПУСК НЕЙРОСЕТИ...")
+    print(">>> STARTING NEURAL NETWORK...")
     
     try:
-        # Получаем текущее разрешение экрана
         screen_width, screen_height = pyautogui.size()
         
-        # Вычисляем центр
         center_x = screen_width // 2
         center_y = screen_height // 2
         
-        # Перемещаем курсор в центр (duration=0.1 делает движение быстрым)
         pyautogui.moveTo(center_x, center_y, duration=0.1)
-        print(f"Курсор перемещен в центр: ({center_x}, {center_y})")
+        print(f"Cursor moved to center: ({center_x}, {center_y})")
         
-        # Небольшая пауза, чтобы элементы управления видео успели появиться
         pyautogui.sleep(0.5) 
         
     except Exception as e:
-        print(f"Ошибка при перемещении курсора: {e}")
+        print(f"Error moving cursor: {e}")
         return
 
     with mss.mss() as sct:
@@ -84,33 +83,29 @@ def run_ai_logic():
         screen_img = np.array(sct.grab(monitor))
         frame = cv2.cvtColor(screen_img, cv2.COLOR_BGRA2BGR)
 
-        # Сохраняем оригинальный кадр для дебага
         cv2.imwrite("debug_frame.jpg", frame)
 
         if not model:
-            print("Модель не загружена")
+            print("Model not loaded")
             return
 
         try:
             results = model(frame, imgsz=640, conf=0.02)
         except Exception as e:
-            print(f"Ошибка выполнения модели: {e}")
+            print(f"Error running model: {e}")
             return
 
-        # Если YOLO вернула пустой список
         if len(results) == 0:
-            print("YOLO не вернула результатов")
+            print("YOLO returned no results")
             return
 
-        # Делаем debug-картинку с отрисованными боксами
         try:
             annotated = results[0].plot()
             cv2.imwrite("debug_yolo.jpg", annotated)
-            print("debug_yolo.jpg сохранён")
+            print("debug_yolo.jpg saved")
         except Exception as e:
-            print(f"Ошибка отрисовки результатов: {e}")
+            print(f"Error drawing results: {e}")
 
-        # Детекция объектов
         for result in results:
             for box in result.boxes:
                 if box.conf[0] > 0.01:
@@ -118,52 +113,75 @@ def run_ai_logic():
                     center_x = int((x1 + x2) / 2)
                     center_y = int((y1 + y2) / 2)
 
-                    print(f"Обнаружен объект: {center_x}, {center_y}")
+                    print(f"Object detected: {center_x}, {center_y}")
                     pyautogui.moveTo(center_x, center_y, duration=0.5)
                     pyautogui.click()
                     return
 
 
-def listen_server(sock):
-    """Слушает команды от сервера"""
-    while True:
+def listen_server(sock, stop_event): 
+    while not stop_event.is_set():
         try:
             data = sock.recv(1024)
+            if not data:
+                print("Server closed connection.")
+                stop_event.set()
+                break
+                
             if data == b'TRIGGER_AI':
-                # Запускаем ИИ в отдельном потоке, чтобы не блокировать сеть
-                ai_thread = threading.Thread(target=run_ai_logic)
-                ai_thread.start()
-        except:
-            print("Связь с сервером потеряна")
+                threading.Thread(target=run_ai_logic, daemon=True).start()
+                
+        except socket.error:
+            print("Connection error (recv).")
+            stop_event.set()
+            break
+        except Exception as e:
+            print(f"Error in listener: {e}")
+            stop_event.set()
             break
 
 def main():
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        client.connect((SERVER_IP, PORT))
-        print(f"Подключено к серверу {SERVER_IP}")
-    except Exception as e:
-        print(f"Не удалось подключиться: {e}")
-        return
-
-    # Запускаем прослушивание сервера в отдельном потоке
-    server_listener = threading.Thread(target=listen_server, args=(client,), daemon=True)
-    server_listener.start()
-
-    print(f"Нажмите {TRIGGER_KEY}, чтобы отправить сигнал...")
-    
-    # Слушаем клавиатуру (основной поток)
     while True:
-        keyboard.wait(TRIGGER_KEY)
-        print("Кнопка нажата! Отправка сигнала...")
+        client = None
+        stop_event = threading.Event()
+        
         try:
-            client.send(b'ACTION')
-            # Небольшая задержка, чтобы не спамить сигналом при удержании
-            pyautogui.sleep(0.5) 
-        except:
-            print("Ошибка отправки")
-            break
+            print(f"Connecting to {SERVER_IP}:{PORT}...")
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.settimeout(5)
+            client.connect((SERVER_IP, PORT))
+            client.settimeout(None)
+            
+            print(f">>> CONNECTED! Press {TRIGGER_KEY} for action.")
+            
+            server_listener = threading.Thread(target=listen_server, args=(client, stop_event), daemon=True)
+            server_listener.start()
+
+            while not stop_event.is_set():
+                if keyboard.is_pressed(TRIGGER_KEY):
+                    print("Button pressed! Sending signal...")
+                    try:
+                        client.send(b'ACTION')
+                        time.sleep(0.5) 
+                    except socket.error:
+                        print("Error sending data.")
+                        stop_event.set()
+                        break
+                
+                time.sleep(0.05)
+
+        except Exception as e:
+            print(f"Failed to connect: {e}")
+        
+        finally:
+            if client:
+                client.close()
+            
+            if not stop_event.is_set():
+                stop_event.set()
+            
+            print("Retrying connection in 5 seconds...")
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()
-
